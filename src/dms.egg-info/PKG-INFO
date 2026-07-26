@@ -1,0 +1,143 @@
+Metadata-Version: 2.4
+Name: dms
+Version: 0.1.0
+Summary: Driver Monitoring System — Phase 1
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: opencv-python>=4.8.0
+Requires-Dist: mediapipe>=0.10.9
+Requires-Dist: numpy>=1.24.0
+Requires-Dist: pandas>=2.0.0
+Requires-Dist: scikit-learn>=1.3.0
+Requires-Dist: matplotlib>=3.7.0
+Requires-Dist: seaborn>=0.13.0
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: pydantic>=2.0.0
+Requires-Dist: pyarrow>=14.0.0
+Requires-Dist: scipy>=1.11.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+
+# DMS Phase 1 — Driver Monitoring System
+
+Production-oriented Phase 1 pipeline for verifying whether explainable facial measurements extracted via **MediaPipe Face Mesh** can explain FL3D driver state labels.
+
+## Objective
+
+Answer: **Can handcrafted physiological/geometric features explain driver state (alert / yawning / microsleep)?**
+
+- FL3D provides **images + ground-truth labels only**
+- FL3D landmark annotations are **ignored**
+- All landmarks come from **MediaPipe Face Mesh (468+ points)**
+- Classification is **rule-based** (no ML in Phase 1)
+
+## Pipeline
+
+```
+FL3D Images → Dataset Loader → Face Detection → MediaPipe Face Mesh
+    → Landmark Processing → Feature Extraction → Rule Engine
+    → Evaluation vs FL3D Labels → Feature Dataset Export + EDA
+```
+
+## Project Structure
+
+```
+DMS Project/
+├── configs/                 # YAML configuration
+├── classification_frames/   # FL3D raw data (images + annotations)
+├── data/features/           # Exported feature datasets
+├── outputs/                 # Reports, figures, metrics
+├── src/dms/                 # Source package
+│   ├── dataset/             # FL3D loader (labels only)
+│   ├── detectors/           # Modular face detection
+│   ├── landmarks/           # MediaPipe Face Mesh
+│   ├── features/            # EAR, MAR, head pose, gaze, quality
+│   ├── rules/               # Rule-based classifier
+│   ├── evaluation/          # Metrics + failure analysis
+│   ├── analysis/            # EDA statistics
+│   ├── visualization/       # Plots
+│   └── pipeline/            # End-to-end orchestration
+└── tests/
+```
+
+## Setup
+
+```bash
+cd "DMS Project"
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+pip install -r requirements.txt
+pip install -e .
+```
+
+## Run Pipeline
+
+**Full run** (all configured splits — may take hours on ~53k images):
+
+```bash
+python -m dms.pipeline --config configs/default.yaml
+```
+
+**Debug run** (10 samples per split):
+
+```bash
+python -m dms.pipeline --config configs/default.yaml --max-samples 10 --splits train
+```
+
+## Outputs
+
+Each run creates `outputs/runs/<timestamp>/` containing:
+
+| Artifact | Description |
+|---|---|
+| `config_snapshot.json` | Reproducible config |
+| `validation_report.json` | Dataset integrity |
+| `metrics/evaluation.json` | Accuracy, F1, confusion matrix |
+| `reports/eda_summary.json` | Feature statistics |
+| `reports/failure_analysis.json` | Misclassification analysis |
+| `reports/misclassified.csv` | Failed samples |
+| `figures/` | Histograms, scatter, box plots, correlation |
+
+Feature datasets are exported to `data/features/features_<timestamp>.csv` and `.parquet`.
+
+## Configuration
+
+Edit `configs/default.yaml` to adjust:
+
+- Data paths and splits
+- Detector provider (`mediapipe` / `retinaface`)
+- MediaPipe confidence thresholds
+- Rule thresholds (`mar_yawning`, `ear_microsleep`)
+- Enabled feature groups
+
+Landmark indices: `configs/landmarks_mediapipe.yaml`
+
+## Tests
+
+```bash
+pytest tests/ -v
+```
+
+## Phase 2 Compatibility
+
+Feature extraction is **dataset-independent**. Future pipeline:
+
+```
+Video → Frames → Face Detection → Face Mesh → Features → Temporal Model → Alert
+```
+
+Only the dataset loader and frame source change; detectors, landmarks, and features remain unchanged.
+
+## Feature Vector (exported columns)
+
+| Category | Features |
+|---|---|
+| Eye | `ear_left`, `ear_right`, `ear_avg`, `eye_opening`, `eyes_closed`, `blink_proxy` |
+| Mouth | `mar`, `mouth_opening`, `mouth_width_norm`, `yawning_indicator` |
+| Head | `pitch`, `yaw`, `roll` |
+| Gaze | `gaze_horizontal`, `gaze_vertical`, `gaze_magnitude` |
+| Quality | `blur`, `brightness`, `detection_confidence` |
+| Geometric | `eye_distance`, `face_height_ratio`, `symmetry_score`, ... |
+
+Plus: `ground_truth_label`, `predicted_label`, `subject_id`, `image_id`.

@@ -1,0 +1,61 @@
+# Video temporal feature extraction — extends Phase 1 detector/landmarks/features config.
+# Paths are relative to the project root.
+
+project:
+  name: dms-video-phase1.5
+
+paths:
+  video_data_roots:
+    - Fold5_part2
+  temporal_features_dir: outputs/temporal_features
+  outputs_dir: outputs
+
+video:
+  extensions:
+    - .mov
+    - .mp4
+    - .avi
+    - .mkv
+  subject_dir_pattern: "^\\d+$"
+  export_formats:
+    - parquet
+    - csv
+  skip_existing: true
+  max_videos: null
+  use_video_landmark_tracking: true
+  labels_filename: labels.csv
+
+compute:
+  device: auto
+  mediapipe_delegate: auto
+  num_workers: 4
+  frame_buffer_size: 4
+  log_interval_sec: 5.0
+
+# Reuse Phase 1 CV stack settings (same feature extraction path)
+detector:
+  provider: mediapipe
+  min_detection_confidence: 0.5
+  model_selection: 0
+
+landmarks:
+  provider: mediapipe_face_mesh
+  max_num_faces: 1
+  refine_landmarks: true
+  min_detection_confidence: 0.5
+  min_tracking_confidence: 0.5
+  schema_path: configs/landmarks_mediapipe.yaml
+
+features:
+  enabled_groups:
+    - eye
+    - mouth
+    - head
+    - gaze
+    - quality
+    - geometric
+  ear_blink_threshold: 0.21
+  mar_yawn_threshold: 0.6
+
+pipeline:
+  skip_on_detection_failure: true

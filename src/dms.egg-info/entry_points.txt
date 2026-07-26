@@ -1,0 +1,3 @@
+[console_scripts]
+dms = dms.pipeline.__main__:main
+dms-video = dms.pipeline.video_main:main

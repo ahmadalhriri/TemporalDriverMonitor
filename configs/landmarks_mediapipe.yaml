@@ -1,0 +1,48 @@
+# MediaPipe Face Mesh landmark index definitions (468 landmarks)
+schema_id: mediapipe_face_mesh_v1
+num_landmarks: 468
+
+# Eye landmarks for EAR (6 points per eye)
+left_eye:
+  - 33
+  - 160
+  - 158
+  - 133
+  - 153
+  - 144
+
+right_eye:
+  - 362
+  - 385
+  - 387
+  - 263
+  - 373
+  - 380
+
+# Inner mouth for MAR
+mouth:
+  left_corner: 61
+  right_corner: 291
+  upper_lip: 13
+  lower_lip: 14
+
+# Head pose estimation (6 canonical points)
+head_pose:
+  nose_tip: 1
+  chin: 152
+  left_eye_outer: 33
+  right_eye_outer: 263
+  left_mouth: 61
+  right_mouth: 291
+
+# Iris centers (when refine_landmarks=true, total landmarks = 478)
+iris:
+  left: 468
+  right: 473
+
+# Symmetry pairs (left_index, right_index)
+symmetry_pairs:
+  - [33, 263]
+  - [61, 291]
+  - [133, 362]
+  - [234, 454]

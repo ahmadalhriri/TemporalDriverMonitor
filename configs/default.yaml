@@ -1,0 +1,70 @@
+project:
+  name: dms-phase1
+  seed: 42
+
+paths:
+  data_root: classification_frames
+  processed_dir: data/processed
+  features_dir: data/features
+  outputs_dir: outputs
+
+dataset:
+  splits:
+    - train
+    - val
+    - test
+  holdout_split: holdout
+  label_field: driver_state
+  valid_labels:
+    - alert
+    - yawning
+    - microsleep
+  annotation_pattern: "annotations_{split}.json"
+  max_samples: null  # set integer for debug runs
+
+detector:
+  provider: mediapipe  # mediapipe | retinaface
+  min_detection_confidence: 0.5
+  model_selection: 0   # 0=short-range, 1=full-range
+
+landmarks:
+  provider: mediapipe_face_mesh
+  max_num_faces: 1
+  refine_landmarks: true
+  min_detection_confidence: 0.5
+  min_tracking_confidence: 0.5
+
+features:
+  enabled_groups:
+    - eye
+    - mouth
+    - head
+    - gaze
+    - quality
+    - geometric
+  ear_blink_threshold: 0.21
+  mar_yawn_threshold: 0.6
+
+rules:
+  thresholds:
+    mar_yawning: 0.55
+    ear_microsleep: 0.20
+    eyes_closed_ear: 0.21
+  priority:
+    - microsleep
+    - yawning
+    - alert
+
+pipeline:
+  batch_size: 32
+  skip_on_detection_failure: true
+  save_misclassified_images: false
+
+evaluation:
+  primary_split: test
+  generate_failure_analysis: true
+
+analysis:
+  generate_plots: true
+  plot_formats:
+    - png
